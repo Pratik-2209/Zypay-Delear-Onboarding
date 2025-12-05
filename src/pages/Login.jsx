@@ -2,23 +2,75 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
+import apiClient from "@/Server/apiClient"
+import { useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 
-function App() {
+
+function Login() {
   const [tab, setTab] = useState("email")      // "email" or "mobile"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [mobile, setMobile] = useState("")
   const [otp, setOtp] = useState("")
 
-  const handleEmailLogin = (e) => {
-    e.preventDefault()
-    console.log("Email login:", { email, password })
-  }
+ const navigate = useNavigate()
+ const handleEmailLogin = async (e) => {
+  e.preventDefault();
 
-  const handleMobileLogin = (e) => {
-    e.preventDefault()
-    console.log("Mobile login:", { mobile, otp })
+  try {
+    const res = await apiClient.post("/auth/login", {
+      email,
+      password,
+    });
+
+    if (res.status === 200) {
+
+      // ⭐ IMPORTANT: Save login data
+      localStorage.setItem(
+        "dealer_portal_auth",
+        JSON.stringify({
+          token: res.data.token,
+          user: res.data.user
+        })
+      );
+
+      toast.success("Login successful!");
+
+      navigate("/onboarding");
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Login failed!");
   }
+};
+
+
+ const handleMobileLogin = async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await apiClient.post("/auth/mobile-login", { mobile, otp });
+
+    if (res.status === 200) {
+
+      // ⭐ Save token + user here also
+      localStorage.setItem(
+        "dealer_portal_auth",
+        JSON.stringify({
+          token: res.data.token,
+          user: res.data.user
+        })
+      );
+
+      toast.success("Mobile Login Successful!");
+      navigate("/onboarding");
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Mobile login failed!");
+  }
+};
+
+
 
   // allow only digits in mobile + otp
   const handleMobileChange = (e) => {
@@ -160,4 +212,4 @@ function App() {
   )
 }
 
-export default App
+export default Login
